@@ -6,6 +6,8 @@ class WikiScrapy(scrapy.Spider) :
     # url = 'https://fr.wikipedia.org/wiki/Web_scraping'
     # url = 'https://en.wikipedia.org/wiki/Abraham_Lincoln'
     url = '  https://en.wikipedia.org/wiki/Geography_of_Togo'
+    # url = 'https://www.te38.fr/comprendre-la-rodp-en-3-minutes/'
+    allowed_domains = ['wikipedia.org']
 
     def start_requests(self):
         yield scrapy.Request(url = self.url, callback=self.parse)

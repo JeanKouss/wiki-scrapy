@@ -5,9 +5,17 @@
 
 
 # useful for handling different item types with a single interface
+import json
 from itemadapter import ItemAdapter
 
 
 class WikiScrapyPipeline:
+    
+    def open_spider(self, spider):
+        pass
+
+    def close_spider(self, spider):
+        pass
+
     def process_item(self, item, spider):
         return item

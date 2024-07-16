@@ -7,6 +7,8 @@ import scrapy
 
 
 class WikiScrapyItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    url = scrapy.Field()
+    title = scrapy.Field()
+    content = scrapy.Field()
+    linked_pages_url = scrapy.Field()
+    
