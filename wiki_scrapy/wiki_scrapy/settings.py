@@ -90,11 +90,11 @@ AUTOTHROTTLE_DEBUG = False
 # Feed export settings
 FEED = {
     'items.json': {
-        'format': 'jsonlines',
+        'format': 'json',
         'encoding': 'utf8',
         'store_empty': False,
         'indent': 4,
     },
 }
 
-FEED_EXPORT_BATCH_ITEM_COUNT = 200
+FEED_EXPORT_BATCH_ITEM_COUNT = 10

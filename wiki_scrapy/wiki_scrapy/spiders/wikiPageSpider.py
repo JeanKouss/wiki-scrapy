@@ -8,8 +8,8 @@ class WikiPageSpider(scrapy.Spider) :
     name = "wiki_page_spider"
     allowed_domains = ['wikipedia.org']
     
-    file_to_scrap = "data/urls_to_scrap.txt" # starts from 'https://fr.wikipedia.org/wiki/Web_scraping'
-    scraped_file = "data/scraped_urls.txt"
+    file_to_scrap = "scraping-datas/urls_to_scrap.txt" # starts from 'https://fr.wikipedia.org/wiki/Web_scraping'
+    scraped_file = "scraping-datas/scraped_urls.txt"
 
     scraped_urls = []
     urls_to_scrap = deque([])
@@ -18,19 +18,19 @@ class WikiPageSpider(scrapy.Spider) :
     max_persistence_count = 10
 
     def load_urls_to_scrap(self) :
-        with open(self.file_to_scrap, 'r') as to_scrap :
+        with open(self.file_to_scrap, 'r', encoding='utf-8') as to_scrap :
             content = to_scrap.read()
             for url in content.split('\n') :
                 self.urls_to_scrap.append(url)
     
     def persist_urls_to_scrap(self) :
         to_text = "\n".join(self.urls_to_scrap)
-        with open(self.file_to_scrap, 'w') as to_scrap :
+        with open(self.file_to_scrap, 'w', encoding='utf-8') as to_scrap :
             to_scrap.write(to_text)
     
     def load_sraped_urls(self) :
         try :
-            with open(self.scraped_file, 'r') as scraped :
+            with open(self.scraped_file, 'r', encoding='utf-8') as scraped :
                 content = scraped.read()
                 self.scraped_urls = content.split('\n')
         except FileNotFoundError :
@@ -39,7 +39,7 @@ class WikiPageSpider(scrapy.Spider) :
     
     def persist_scraped_urls(self) :
         to_text = "\n".join(self.scraped_urls)
-        with open(self.scraped_file, 'w') as scraped :
+        with open(self.scraped_file, 'w', encoding='utf-8') as scraped :
             scraped.write(to_text)
 
     def request_urls_persitence(self) :
@@ -81,6 +81,7 @@ class WikiPageSpider(scrapy.Spider) :
 
     def extact_response_data(self, response) :
         content  = " ".join(response.css('#bodyContent p ::text').extract())
+        content = content.encode().decode('unicode_escape')
         title = response.css('title::text').extract()[0]
         url = response.url
         linked_pages = response.css('#bodyContent a::attr(href)').extract()
