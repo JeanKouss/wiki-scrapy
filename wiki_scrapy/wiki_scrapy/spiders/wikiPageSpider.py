@@ -81,7 +81,6 @@ class WikiPageSpider(scrapy.Spider) :
 
     def extact_response_data(self, response) :
         content  = " ".join(response.css('#bodyContent p ::text').extract())
-        content = content.encode().decode('unicode_escape')
         title = response.css('title::text').extract()[0]
         url = response.url
         linked_pages = response.css('#bodyContent a::attr(href)').extract()
