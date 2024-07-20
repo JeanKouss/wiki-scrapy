@@ -3,9 +3,9 @@ from scrapy.crawler import CrawlerProcess
 
 class WikiScrapy(scrapy.Spider) :
     name = "wiki_scraper"
-    # url = 'https://fr.wikipedia.org/wiki/Web_scraping'
+    url = 'https://fr.wikipedia.org/wiki/Web_scraping'
     # url = 'https://en.wikipedia.org/wiki/Abraham_Lincoln'
-    url = '  https://en.wikipedia.org/wiki/Geography_of_Togo'
+    # url = '  https://en.wikipedia.org/wiki/Geography_of_Togo'
     # url = 'https://www.te38.fr/comprendre-la-rodp-en-3-minutes/'
     allowed_domains = ['wikipedia.org']
 

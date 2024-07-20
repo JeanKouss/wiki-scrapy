@@ -1,0 +1,1 @@
+scrapy crawl wiki_page_spider -o "output/%(batch_id)d-output%(batch_time)s.json"
