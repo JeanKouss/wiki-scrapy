@@ -1,3 +1,4 @@
+## This code was for doing some expérimentations
 import scrapy
 from scrapy.crawler import CrawlerProcess
 
