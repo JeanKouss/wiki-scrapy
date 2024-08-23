@@ -3,12 +3,18 @@ from collections import deque
 from wiki_scrapy.items import WikiScrapyItem
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError, TimeoutError, TCPTimedOutError
+import re
+from scrapy.linkextractors import LinkExtractor
 
 class WikiPageSpider(scrapy.Spider) :
     name = "wiki_page_spider"
-    allowed_domains = ['wikipedia.org']
+    allowed_domains = ['en.wikipedia.org']
     
-    file_to_scrap = "scraping-datas/urls_to_scrap.txt" # starts from 'https://fr.wikipedia.org/wiki/Web_scraping'
+    # Check readme.md to know why those are boring or intersting for this project
+    interesting_url_pattern = r"https://en\.wikipedia\.org/wiki/.+"
+    boring_url_pattern = r"https://en\.wikipedia\.org/wiki/[^/]+:" # example r"https://en\.wikipedia\.org/wiki/(Category|Wikipedia|Help|File|Template|Special|User):"
+    
+    file_to_scrap = "scraping-datas/urls_to_scrap.txt" # starts from 'https://en.wikipedia.org/wiki/Web_scraping'
     scraped_file = "scraping-datas/scraped_urls.txt"
 
     scraped_urls = []
@@ -16,6 +22,14 @@ class WikiPageSpider(scrapy.Spider) :
 
     current_persistence_count = 0
     max_persistence_count = 10
+
+    link_extractor = LinkExtractor(
+        allow=interesting_url_pattern,
+        deny=boring_url_pattern, 
+        unique=True, 
+        restrict_css="#bodyContent",
+        canonicalize=True
+    )
 
     def load_urls_to_scrap(self) :
         with open(self.file_to_scrap, 'r', encoding='utf-8') as to_scrap :
@@ -83,17 +97,17 @@ class WikiPageSpider(scrapy.Spider) :
         content  = " ".join(response.css('#bodyContent p ::text').extract())
         title = response.css('title::text').extract()[0]
         url = response.url
-        linked_pages = response.css('#bodyContent a::attr(href)').extract()
+        linked_pages = self.link_extractor.extract_links(response)
         linked_pages_url = []
         for link in linked_pages :
-            link_url = response.urljoin(link)
+            link_url = response.urljoin(link.url)
             linked_pages_url.append(link_url)
-        response_data = {url : {
+        response_data = {
             "url" : url,
             "title" : title,
             "content" : content,
-            "linked_pages_url" : linked_pages_url,
-        }}
+            "linked_articles_url" : linked_pages_url,
+        }
         return linked_pages_url, response_data
 
 
