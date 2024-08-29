@@ -1,10 +1,9 @@
 import scrapy
-from collections import deque
-from wiki_scrapy.items import WikiScrapyItem
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError, TimeoutError, TCPTimedOutError
 import re
 from scrapy.linkextractors import LinkExtractor
+from wiki_scrapy.services.UrlManager import UrlManager
 
 class WikiPageSpider(scrapy.Spider) :
     name = "wiki_page_spider"
@@ -17,11 +16,10 @@ class WikiPageSpider(scrapy.Spider) :
     file_to_scrap = "scraping-datas/urls_to_scrap.txt" # starts from 'https://en.wikipedia.org/wiki/Web_scraping'
     scraped_file = "scraping-datas/scraped_urls.txt"
 
-    scraped_urls = []
-    urls_to_scrap = deque([])
+    def __init__(self):
+        super().__init__()
+        self.url_manager = UrlManager(self.file_to_scrap, self.scraped_file)
 
-    current_persistence_count = 0
-    max_persistence_count = 10
 
     link_extractor = LinkExtractor(
         allow=interesting_url_pattern,
@@ -31,40 +29,6 @@ class WikiPageSpider(scrapy.Spider) :
         canonicalize=True
     )
 
-    def load_urls_to_scrap(self) :
-        with open(self.file_to_scrap, 'r', encoding='utf-8') as to_scrap :
-            content = to_scrap.read()
-            for url in content.split('\n') :
-                self.urls_to_scrap.append(url)
-    
-    def persist_urls_to_scrap(self) :
-        to_text = "\n".join(self.urls_to_scrap)
-        with open(self.file_to_scrap, 'w', encoding='utf-8') as to_scrap :
-            to_scrap.write(to_text)
-    
-    def load_sraped_urls(self) :
-        try :
-            with open(self.scraped_file, 'r', encoding='utf-8') as scraped :
-                content = scraped.read()
-                self.scraped_urls = content.split('\n')
-        except FileNotFoundError :
-            self.scraped_urls = []
-            self.persist_scraped_urls()
-    
-    def persist_scraped_urls(self) :
-        to_text = "\n".join(self.scraped_urls)
-        with open(self.scraped_file, 'w', encoding='utf-8') as scraped :
-            scraped.write(to_text)
-
-    def request_urls_persitence(self) :
-        self.current_persistence_count += 1
-        if self.current_persistence_count <= self.max_persistence_count :
-            return
-        self.persist_scraped_urls()
-        self.persist_urls_to_scrap()
-        self.current_persistence_count = 0
-        self.logger.info('Persisting urls')
-
 
     def should_scrap(self, url) :
         if url in self.scraped_urls :
@@ -72,25 +36,24 @@ class WikiPageSpider(scrapy.Spider) :
         return True
 
     def start_requests(self):
-        self.load_urls_to_scrap()
-        self.load_sraped_urls()
-        while self.urls_to_scrap :
-            next_url = self.urls_to_scrap.popleft()
-            if self.should_scrap(next_url) :
-                yield scrapy.Request(url = next_url, callback=self.parse)
+        while True:
+            next_url = self.url_manager.get_next_url_to_scrap()
+            if next_url:
+                yield scrapy.Request(url=next_url, callback=self.parse, errback=self.errback_httpbin)
+            else:
+                break
     
 
     def parse(self, response) :
         next_urls, response_data = self.extact_response_data(response)
         yield response_data
-        self.scraped_urls.append(response.url)
+        self.url_manager.add_scraped_url(response.url)
         for url in next_urls :
-            self.urls_to_scrap.append(url)
-        self.request_urls_persitence()
-        while self.urls_to_scrap :
-            next_url = self.urls_to_scrap.popleft()
-            if self.should_scrap(next_url) :
-                yield scrapy.Request(url = next_url, callback=self.parse)
+            self.url_manager.add_url_to_scrap(url)
+        self.url_manager.request_urls_persistence()
+        next_url = self.url_manager.get_next_url_to_scrap()
+        if next_url:
+            yield scrapy.Request(url=next_url, callback=self.parse, errback=self.errback_httpbin)
         
 
     def extact_response_data(self, response) :
@@ -98,10 +61,7 @@ class WikiPageSpider(scrapy.Spider) :
         title = response.css('title::text').extract()[0]
         url = response.url
         linked_pages = self.link_extractor.extract_links(response)
-        linked_pages_url = []
-        for link in linked_pages :
-            link_url = response.urljoin(link.url)
-            linked_pages_url.append(link_url)
+        linked_pages_url = [response.urljoin(link.url) for link in linked_pages]
         response_data = {
             "url" : url,
             "title" : title,
@@ -112,8 +72,8 @@ class WikiPageSpider(scrapy.Spider) :
 
 
     def spider_closed(self, spider):
-        self.persist_scraped_urls()
-        self.persist_urls_to_scrap()
+        self.url_manager.persist_scraped_urls()
+        self.url_manager.persist_urls_to_scrap()
 
 
     def errback_httpbin(self, failure):
