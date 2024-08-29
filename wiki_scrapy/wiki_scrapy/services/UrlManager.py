@@ -21,7 +21,7 @@ class UrlManager:
         self.urls_to_scrap = deque()
         self.scraped_urls = []
         self.current_persistence_count = 0
-        self.max_persistence_count = 10
+        self.max_persistence_count = 100
         self._initialized = True
         self._data_lock = threading.RLock()  # Lock for synchronizing data access
         self.load_urls_to_scrap()

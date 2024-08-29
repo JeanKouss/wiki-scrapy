@@ -1,7 +1,7 @@
 import scrapy
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError, TimeoutError, TCPTimedOutError
-import re
+from scrapy import signals
 from scrapy.linkextractors import LinkExtractor
 from wiki_scrapy.services.UrlManager import UrlManager
 
@@ -29,11 +29,11 @@ class WikiPageSpider(scrapy.Spider) :
         canonicalize=True
     )
 
-
-    def should_scrap(self, url) :
-        if url in self.scraped_urls :
-            return False
-        return True
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        spider = super(WikiPageSpider, cls).from_crawler(crawler, *args, **kwargs)
+        crawler.signals.connect(spider.spider_closed, signal=signals.spider_closed)  # Register the spider_closed signal
+        return spider
 
     def start_requests(self):
         while True:
