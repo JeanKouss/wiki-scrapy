@@ -100,5 +100,5 @@ FEED_EXPORT_ENCODING = 'utf-8'
 FEED_EXPORT_BATCH_ITEM_COUNT = 200
 
 # Close the spyder after a number of items stored
-# User for testing mostly. Must be unseted when pushing to the repository.
-CLOSESPIDER_ITEMCOUNT = 10
+# User for testing. Must be unseted when pushing to the repository.
+# CLOSESPIDER_ITEMCOUNT = 10
